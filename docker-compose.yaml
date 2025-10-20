@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - flask-data:/app/data
+    container_name: flask_final_project
+
+volumes:
+  flask-data:
