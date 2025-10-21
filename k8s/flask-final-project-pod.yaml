@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flask-final-project-pod
+  labels:
+    app: flask-final-project
+spec:
+  containers:
+  - name: flask-final-project
+    image:  315510/flask_final_project:latest
+    ports:
+    - containerPort: 8080

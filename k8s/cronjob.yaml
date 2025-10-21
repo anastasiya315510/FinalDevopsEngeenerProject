@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flask-final-project-cronjob
+spec:
+  schedule: "*/5 * * * *" # Runs every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: inline-python-task
+              image: python:3.11-slim
+              command:
+                - python
+                - -c
+                - |
+                  import datetime
+                  import os
+                  print("🕒 Running scheduled task at", datetime.datetime.utcnow())
+                  print("Environment:", os.getenv("APP_ENV"), "| Log level:", os.getenv("LOG_LEVEL"))
+                  # Example: your logic here
+                  # e.g., call an API or cleanup temp files
+              env:
+                - name: APP_ENV
+                  valueFrom:
+                    configMapKeyRef:
+                      name: flask-final-project-config
+                      key: APP_ENV
+                - name: LOG_LEVEL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: flask-final-project-config
+                      key: LOG_LEVEL
+              resources:
+                requests:
+                  cpu: "100m"
+                limits:
+                  cpu: "500m"
+          restartPolicy: OnFailure

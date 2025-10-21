@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flask-final-project-config
+data:
+  APP_ENV: dev
+  LOG_LEVEL: info

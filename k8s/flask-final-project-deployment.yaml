@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-final-project-deployment
+  labels:
+    app: flask-final-project
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-final-project
+  template:
+    metadata:
+      labels:
+        app: flask-final-project
+    spec:
+      containers:
+        - name: flask-final-project
+          image: 315510/flask_final_project:v2
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"
+            limits:
+              cpu: "500m"
+          env:
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: flask-final-project-config
+                  key: APP_ENV
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: flask-final-project-config
+                  key: LOG_LEVEL
+          # ----------------------------
+          # Health Probes
+          # ----------------------------
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
