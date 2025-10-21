@@ -115,7 +115,78 @@ Visit the app at: [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## ✅ License
+### Phase 2: Orchestration - Kubernetes Basics & Advanced
+Objective:
+In Phase 2, you will build upon your containerization knowledge by orchestrating your
+application using Kubernetes. The goal is to deploy a scalable and highly available application.
+Tasks:
+#### 1. Kubernetes Cluster Setup:
+○ Set up a Kubernetes cluster using Minikube or k3s.
+```bazaar
+minikube start --driver=docker
+minikube status
 
-MIT License. Free to use for personal or commercial projects.
+```
+○ Deploy your Dockerized web application as a Kubernetes Pod.
+```bazaar
+kubectl apply -f  k8s/flask-final-project-pod.yaml
+pod/flask-final-project-pod created
+```
+
+
+
+#### 2. Basic Kubernetes Resources:
+○ Create a Deployment and ReplicaSet for managing the application.
+```bazaar
+kubectl apply -f k8s/flask-final-project-deployment.yaml
+
+kubectl get deployments
+kubectl get replicaset
+kubectl get pods
+
+
+```
+○ Expose the application externally using a Kubernetes Service.
+
+```bazaar
+kubectl apply -f k8s/flask-final-project-service.yaml
+
+kubectl get service flask-final-project-service
+
+```
+○ Implement Horizontal Pod Autoscaling (HPA) based on CPU usage.
+   - add Metrics Server:
+```bazaar
+minikube addons enable metrics-server
+kubectl get deployment metrics-server -n kube-system
+
+kubectl apply -f k8s/flask-final-project-deployment.yaml
+
+```
+
+- Add autoscaling
+```
+kubectl autoscale deployment flask-final-project-deployment \
+  --cpu=50% \
+  --min=2 \
+  --max=5
+  
+  
+  kubectl get hpa
+```
+#### 3. Advanced Kubernetes Concepts:
+○ Use ConfigMaps and Secrets to manage configuration.
+```bazaar
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f  k8s/secret.yaml
+kubectl apply -f k8s/flask-final-project-deployment.yaml
+```
+○ Set up Kubernetes CronJobs to automate periodic tasks.
+```bazaar
+kubectl apply -f k8s/cronjob.yaml
+kubectl describe cronjob flask-final-project-cronjob
+```
+○ Implement Liveness and Readiness Probes for monitoring application health.
+
+
 
