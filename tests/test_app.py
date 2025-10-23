@@ -1,7 +1,6 @@
 import pytest
 import requests
-from flask import url_for
-from app import create_app  # replace with the module where create_app is defined
+from app import create_app
 
 @pytest.fixture
 def app():
