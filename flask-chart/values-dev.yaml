@@ -1,0 +1,7 @@
+replicaCount: 1
+image:
+  repository: 315510/flask_final_project
+  tag: dev
+service:
+  type: NodePort
+  port: 8000

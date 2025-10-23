@@ -1,0 +1,7 @@
+replicaCount: 3
+image:
+  repository: 315510/flask_final_project
+  tag: latest
+service:
+  type: LoadBalancer
+  port: 80
