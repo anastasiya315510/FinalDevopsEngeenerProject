@@ -25,6 +25,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
       - name: Install dependencies
         run: |
           python -m venv .venv
@@ -44,7 +50,7 @@ jobs:
           pytest
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build-and-test
     steps:
       - name: Checkout repository
@@ -62,6 +68,9 @@ jobs:
           helm repo update
 
       - name: Deploy Helm chart
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           BRANCH="${GITHUB_REF##*/}"
           if [ "$BRANCH" = "dev" ]; then
@@ -70,9 +79,9 @@ jobs:
                   --namespace dev --create-namespace -f helm/values-dev.yaml
           elif [ "$BRANCH" = "master" ]; then
               echo "Deploying to production namespace"
-              # Optional: build and push Docker image
+              # Build and push Docker image
               docker build -t 315510/flask_final_project:latest .
-              echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+              echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
               docker push 315510/flask_final_project:latest
 
               helm upgrade --install flask-app-prod mycharts/flask-chart \
