@@ -40,6 +40,10 @@ helm install flask-app mycharts/flask-chart
 ○ Resolve conflicts and manage pull requests.
 3. CI/CD Pipeline:
 ○ Use GitHub Actions to create a CI/CD pipeline.
+```bazaar
+mkdir -p .github/workflows
+
+```
 ○ Implement different stages in the pipeline (build, test, deploy).
 ○ Use matrix builds to test your application with pylint on multiple environments .
 
