@@ -110,14 +110,14 @@ jobs:
           BRANCH="${GITHUB_REF##*/}"
           if [ "$BRANCH" = "dev" ]; then
               echo "Deploying to development namespace"
-              helm upgrade --install flask-app-dev mycharts/flask-chart \
-                  --namespace dev --create-namespace -f helm/values-dev.yaml
+              helm upgrade --install flask-app-dev flask-chart/ \
+                  --namespace dev --create-namespace -f flask-chart/values-dev.yaml
           elif [ "$BRANCH" = "master" ]; then
               echo "Deploying to production namespace"
               docker build -t 315510/flask_final_project:latest .
               echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
               docker push 315510/flask_final_project:latest
 
-              helm upgrade --install flask-app-prod mycharts/flask-chart \
-                  --namespace prod --create-namespace -f helm/values-prod.yaml
+              helm upgrade --install flask-app-prod flask-chart \
+                  --namespace prod --create-namespace -f flask-chart/values-prod.yaml
           fi
