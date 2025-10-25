@@ -109,7 +109,7 @@ jobs:
       - name: Lint with pylint
         run: |
           source .venv/bin/activate
-          pylint --ignore=tests **/*.py
+          pylint --ignore=tests/*.py
           pylint **/*.py
 
 
