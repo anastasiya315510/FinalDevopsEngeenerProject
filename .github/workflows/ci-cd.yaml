@@ -10,8 +10,12 @@ on:
       - dev
       - master
 
+# -----------------------------
+# Build Stage
+# -----------------------------
 jobs:
-  build-and-test:
+  build:
+    name: Build Python Environment
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -39,16 +43,43 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run tests
+# -----------------------------
+# Test Stage
+# -----------------------------
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run pytest
         run: |
           export PYTHONPATH=$(pwd)
           source .venv/bin/activate
-          pytest
-  
+          pytest tests/
 
+# -----------------------------
+# Deploy Stage
+# -----------------------------
   deploy:
+    name: Deploy to Kubernetes
     runs-on: ubuntu-22.04
-    needs: build-and-test
+    needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -76,11 +107,9 @@ jobs:
                   --namespace dev --create-namespace -f helm/values-dev.yaml
           elif [ "$BRANCH" = "master" ]; then
               echo "Deploying to production namespace"
-              # Build and push Docker image
               docker build -t 315510/flask_final_project:latest .
               echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
               docker push 315510/flask_final_project:latest
 
               helm upgrade --install flask-app-prod mycharts/flask-chart \
                   --namespace prod --create-namespace -f helm/values-prod.yaml
-          fi
