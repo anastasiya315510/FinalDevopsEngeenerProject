@@ -117,7 +117,7 @@ jobs:
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-22.04
-    needs: test
+    needs: [test, lint]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
