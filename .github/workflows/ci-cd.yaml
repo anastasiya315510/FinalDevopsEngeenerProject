@@ -10,16 +10,15 @@ on:
       - dev
       - master
 
-# -----------------------------
-# Build Stage
-# -----------------------------
 jobs:
-  build:
-    name: Build Python Environment
+  # -----------------------------
+  # Stage 1: Lint (matrix build)
+  # -----------------------------
+  lint:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.10, 3.11, 3.12]  # Test linting across multiple Python versions
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -29,27 +28,28 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
       - name: Install dependencies
         run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pylint
 
-# -----------------------------
-# Test Stage
-# -----------------------------
+      - name: Lint with pylint
+        run: |
+          source .venv/bin/activate
+          pylint **/*.py || true  # Do not fail workflow on lint errors
+
+  # -----------------------------
+  # Stage 2: Test
+  # -----------------------------
   test:
-    name: Run Unit Tests
     runs-on: ubuntu-22.04
-    needs: build
+    needs: lint
+    strategy:
+      matrix:
+        python-version: [3.11]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -57,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
@@ -67,42 +67,28 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run pytest
+      - name: Run tests
         run: |
           export PYTHONPATH=$(pwd)
           source .venv/bin/activate
-          pytest tests/
+          pytest
 
-# -----------------------------
-# Deploy Stage
-# -----------------------------
+  # -----------------------------
+  # Stage 3: Deploy
+  # -----------------------------
   deploy:
-    name: Deploy to Kubernetes
     runs-on: ubuntu-22.04
     needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Minikube & kubectl
-        run: |
-          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          sudo install kubectl /usr/local/bin/kubectl
-          minikube version
-          kubectl version --client
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.0
 
-      - name: Start Minikube
-        run: |
-          minikube start --driver=docker
-
-      - name: Add Helm repo
-        run: |
-          helm repo add mycharts https://anastasiya315510.github.io/flask-chart
-          helm repo update
-
-      - name: Deploy Helm chart
+      - name: Deploy to Kubernetes via Helm
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -118,6 +104,6 @@ jobs:
               echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
               docker push 315510/flask_final_project:latest
 
-              helm upgrade --install flask-app-prod flask-chart \
+              helm upgrade --install flask-app-prod flask-chart/ \
                   --namespace prod --create-namespace -f flask-chart/values-prod.yaml
           fi
