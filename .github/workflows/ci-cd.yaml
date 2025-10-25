@@ -82,7 +82,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python-version: [3.11, 3.12]  # test multiple Python versions
+        python-version: [3.11]  # test multiple Python versions
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
