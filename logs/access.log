@@ -1,0 +1,10 @@
+2025-10-23 21:25:17,514 - 127.0.0.1 - GET http://localhost/
+2025-10-23 21:25:25,668 - 127.0.0.1 - GET http://localhost/ping
+2025-10-23 21:25:34,338 - 127.0.0.1 - GET http://localhost/health
+2025-10-23 21:25:37,987 - 127.0.0.1 - GET http://localhost/status
+2025-10-23 21:25:42,168 - 127.0.0.1 - GET http://localhost/info
+2025-10-23 21:27:03,085 - 127.0.0.1 - GET http://localhost/telaviv-earthquakes
+2025-10-23 21:27:08,933 - 127.0.0.1 - GET http://localhost/graph-earthquakes
+2025-10-25 16:09:46,249 - 127.0.0.1 - GET http://localhost/graph-earthquakes
+2025-10-25 16:09:54,123 - 127.0.0.1 - GET http://localhost/telaviv-earthquakes
+2025-10-25 16:10:03,537 - 127.0.0.1 - GET http://localhost/info

@@ -1,0 +1,123 @@
+name: Flask CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
+
+# -----------------------------
+# Build Stage
+# -----------------------------
+jobs:
+  build:
+    name: Build Python Environment
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+# -----------------------------
+# Test Stage
+# -----------------------------
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run pytest
+        run: |
+          export PYTHONPATH=$(pwd)
+          source .venv/bin/activate
+          pytest tests/
+
+# -----------------------------
+# Deploy Stage
+# -----------------------------
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-22.04
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Minikube & kubectl
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install kubectl /usr/local/bin/kubectl
+          minikube version
+          kubectl version --client
+
+      - name: Start Minikube
+        run: |
+          minikube start --driver=docker
+
+      - name: Add Helm repo
+        run: |
+          helm repo add mycharts https://anastasiya315510.github.io/flask-chart
+          helm repo update
+
+      - name: Deploy Helm chart
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          if [ "$BRANCH" = "dev" ]; then
+              echo "Deploying to development namespace"
+              helm upgrade --install flask-app-dev flask-chart/ \
+                  --namespace dev --create-namespace -f flask-chart/values-dev.yaml
+          elif [ "$BRANCH" = "master" ]; then
+              echo "Deploying to production namespace"
+              docker build -t 315510/flask_final_project:latest .
+              echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+              docker push 315510/flask_final_project:latest
+
+              helm upgrade --install flask-app-prod flask-chart \
+                  --namespace prod --create-namespace -f flask-chart/values-prod.yaml
+          fi

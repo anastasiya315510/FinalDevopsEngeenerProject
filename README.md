@@ -189,4 +189,8 @@ kubectl describe cronjob flask-final-project-cronjob
 ○ Implement Liveness and Readiness Probes for monitoring application health.
 
 
+### Phase 3
 
+1. Package Management with Helm:
+○ Create a Helm chart for your Kubernetes application.
+○ Publish the Helm chart to an artifact repository.
