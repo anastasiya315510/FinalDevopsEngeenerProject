@@ -5,7 +5,7 @@ Unit tests for the Flask application endpoints using pytest.
 import pytest
 import requests
 
-from ..app import create_app
+from app import create_app
 
 # -----------------------------
 # Fixtures
