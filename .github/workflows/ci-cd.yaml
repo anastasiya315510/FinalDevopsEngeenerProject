@@ -82,7 +82,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python-version: [3.11]  # test multiple Python versions
+        python-version: [ 3.11 ]  # test multiple Python versions
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -109,11 +109,12 @@ jobs:
       - name: Lint with pylint
         run: |
           source .venv/bin/activate
-          pylint --ignore=tests/*.py
-          pylint **/*.py
+          # Lint all Python files except the tests folder
+          pylint --ignore=tests app utils
+  
+  
 
-
-# -----------------------------
+  # -----------------------------
 # Deploy Stage
 # -----------------------------
   deploy:
