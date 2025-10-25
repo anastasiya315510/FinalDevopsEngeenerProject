@@ -49,7 +49,7 @@ jobs:
   test:
     name: Run Unit Tests
     runs-on: ubuntu-22.04
-    needs: build
+    needs: lint
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -79,6 +79,7 @@ jobs:
   lint:
     name: Lint with Pylint
     runs-on: ubuntu-22.04
+    needs: build
     strategy:
       matrix:
         python-version: [3.11, 3.12]  # test multiple Python versions
@@ -118,7 +119,7 @@ jobs:
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-22.04
-    needs: [test, lint]
+    needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
