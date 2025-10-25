@@ -41,8 +41,10 @@ jobs:
 
       - name: Run tests
         run: |
+          export PYTHONPATH=$(pwd)
           source .venv/bin/activate
           pytest
+  
 
   deploy:
     runs-on: ubuntu-22.04
