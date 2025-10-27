@@ -1,7 +1,27 @@
 replicaCount: 1
+
 image:
   repository: 315510/flask_final_project
   tag: dev
+  pullPolicy: Always
+
 service:
   type: NodePort
   port: 8000
+
+config:
+  FLASK_ENV: dev
+  DEBUG: "false"
+
+kubeControllerManager:
+  enabled: true
+kubeScheduler:
+  enabled: true
+kubeApiServer:
+  enabled: true
+kubeEtcd:
+  enabled: true
+kubelet:
+  enabled: true
+kubeProxy:
+  enabled: true
