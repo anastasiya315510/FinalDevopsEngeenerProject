@@ -10,10 +10,10 @@ on:
       - dev
       - master
 
-# -----------------------------
-# Build Stage
-# -----------------------------
 jobs:
+  # -----------------------------
+  # Build Stage
+  # -----------------------------
   build:
     name: Build Python Environment
     runs-on: ubuntu-22.04
@@ -43,9 +43,47 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-# -----------------------------
-# Test Stage
-# -----------------------------
+  # -----------------------------
+  # Lint Stage
+  # -----------------------------
+  lint:
+    name: Lint with Pylint
+    runs-on: ubuntu-22.04
+    needs: build
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint
+
+      - name: Lint with pylint
+        run: |
+          source .venv/bin/activate
+          pylint --ignore=tests app utils
+
+  # -----------------------------
+  # Test Stage
+  # -----------------------------
   test:
     name: Run Unit Tests
     runs-on: ubuntu-22.04
@@ -74,49 +112,8 @@ jobs:
           pytest tests/
 
   # -----------------------------
-# Lint Stage
-# -----------------------------
-  lint:
-    name: Lint with Pylint
-    runs-on: ubuntu-22.04
-    needs: build
-    strategy:
-      matrix:
-        python-version: [ 3.11, 3.12 ]  # test multiple Python versions
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-      - name: Install dependencies
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pylint
-
-      - name: Lint with pylint
-        run: |
-          source .venv/bin/activate
-          # Lint all Python files except the tests folder
-          pylint --ignore=tests app utils
-  
-  
-
+  # Deploy Stage
   # -----------------------------
-# Deploy Stage
-# -----------------------------
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-22.04
@@ -125,27 +122,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Minikube & kubectl
+      - name: Install kubectl & Helm
         run: |
-          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           sudo install kubectl /usr/local/bin/kubectl
-          minikube version
+          curl -LO https://get.helm.sh/helm-v3.14.1-linux-amd64.tar.gz
+          tar -zxvf helm-v3.14.1-linux-amd64.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
           kubectl version --client
+          helm version
 
-      - name: Start Minikube
+      - name: Create namespace
         run: |
-          minikube start --driver=docker
+          BRANCH="${GITHUB_REF##*/}"
+          if [ "$BRANCH" = "dev" ]; then
+            kubectl create ns dev --dry-run=client -o yaml | kubectl apply -f -
+          elif [ "$BRANCH" = "master" ]; then
+            kubectl create ns prod --dry-run=client -o yaml | kubectl apply -f -
+          fi
 
-      - name: Add Helm repo
+      - name: Install Prometheus CRDs
         run: |
-          helm repo add mycharts https://anastasiya315510.github.io/flask-chart
-          helm repo update
-
-      - name: Install Prometheus Operator CRDs
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
       - name: Deploy Helm chart
         env:
@@ -156,7 +156,7 @@ jobs:
           if [ "$BRANCH" = "dev" ]; then
               echo "Deploying to development namespace"
               helm upgrade --install flask-app-dev flask-chart/ \
-                  --namespace dev --create-namespace -f flask-chart/values-dev.yaml
+                  --namespace dev --create-namespace -f flask-chart/values-dev.yaml --wait
           elif [ "$BRANCH" = "master" ]; then
               echo "Deploying to production namespace"
               docker build -t 315510/flask_final_project:latest .
@@ -164,5 +164,4 @@ jobs:
               docker push 315510/flask_final_project:latest
 
               helm upgrade --install flask-app-prod flask-chart \
-                  --namespace prod --create-namespace -f flask-chart/values-prod.yaml
-          fi
+                  --namespace prod --create-namespace -f flask-chart/values-prod.yaml --wait
