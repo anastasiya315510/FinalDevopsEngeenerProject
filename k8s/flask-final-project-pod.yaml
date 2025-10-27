@@ -7,6 +7,6 @@ metadata:
 spec:
   containers:
   - name: flask-final-project
-    image:  315510/flask_final_project:latest
+    image:  315510/flask_final_project:dev
     ports:
     - containerPort: 8080

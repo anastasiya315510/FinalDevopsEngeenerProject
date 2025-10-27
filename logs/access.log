@@ -8,3 +8,6 @@
 2025-10-25 16:09:46,249 - 127.0.0.1 - GET http://localhost/graph-earthquakes
 2025-10-25 16:09:54,123 - 127.0.0.1 - GET http://localhost/telaviv-earthquakes
 2025-10-25 16:10:03,537 - 127.0.0.1 - GET http://localhost/info
+2025-10-26 22:14:19,478 - 127.0.0.1 - GET http://127.0.0.1:8000/
+2025-10-26 22:14:19,506 - 127.0.0.1 - GET http://127.0.0.1:8000/static/experts-logo.svg
+2025-10-26 22:14:20,085 - 127.0.0.1 - GET http://127.0.0.1:8000/favicon.ico
