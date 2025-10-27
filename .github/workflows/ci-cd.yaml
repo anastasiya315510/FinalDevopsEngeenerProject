@@ -183,3 +183,4 @@ jobs:
 
               helm upgrade --install flask-app-prod flask-chart \
                   --namespace prod --create-namespace -f flask-chart/values-prod.yaml --wait
+          fi
