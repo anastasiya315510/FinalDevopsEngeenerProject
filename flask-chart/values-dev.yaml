@@ -12,16 +12,3 @@ service:
 config:
   FLASK_ENV: dev
   DEBUG: "false"
-
-kubeControllerManager:
-  enabled: true
-kubeScheduler:
-  enabled: true
-kubeApiServer:
-  enabled: true
-kubeEtcd:
-  enabled: true
-kubelet:
-  enabled: true
-kubeProxy:
-  enabled: true
