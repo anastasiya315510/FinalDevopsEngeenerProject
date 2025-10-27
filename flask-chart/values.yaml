@@ -14,7 +14,7 @@ ingress:
 
 image:
   repository: 315510/flask_final_project
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: "v2"  # updated to v2
 
 service:
@@ -41,3 +41,20 @@ serviceAccount:
   name: ""
   automount: true
   annotations: {}
+
+prometheus:
+  enabled: true
+
+kubeControllerManager:
+  enabled: true
+kubeScheduler:
+  enabled: true
+kubeApiServer:
+  enabled: true
+kubeEtcd:
+  enabled: true
+kubelet:
+  enabled: true
+kubeProxy:
+  enabled: true
+

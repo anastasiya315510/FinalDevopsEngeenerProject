@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "flask-chart.fullname" . }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     app: {{ include "flask-chart.name" . }}
 spec:
@@ -25,3 +27,18 @@ spec:
             cpu: {{ .Values.resources.requests.cpu }}
           limits:
             cpu: {{ .Values.resources.limits.cpu }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "flask-chart.fullname" . }}-config
+        readinessProbe:
+          httpGet:
+            path: /health   # endpoint that returns 200 OK when app is ready
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health   # endpoint that returns 200 OK when app is alive
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 15

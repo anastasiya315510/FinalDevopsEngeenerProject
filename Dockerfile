@@ -15,4 +15,5 @@ COPY . .
 EXPOSE 8000
 
 # Run Gunicorn with 4 workers
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "sync", "app:create_app()"]
+
