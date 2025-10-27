@@ -141,10 +141,11 @@ jobs:
             kubectl create ns prod --dry-run=client -o yaml | kubectl apply -f -
           fi
 
-      - name: Install Prometheus CRDs (ServiceMonitor & PodMonitor only)
+      - name: Install Prometheus CRDs
         run: |
           kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
           kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
       - name: Deploy Helm chart
         env:
