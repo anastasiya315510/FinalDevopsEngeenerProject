@@ -111,7 +111,7 @@ jobs:
           source .venv/bin/activate
           pytest tests/
 
-  # -----------------------------
+    # -----------------------------
   # Deploy Stage
   # -----------------------------
   deploy:
@@ -122,16 +122,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install kubectl & Helm
+      # Install kubectl, Helm & kind
+      - name: Install tools
         run: |
+          # kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           sudo install kubectl /usr/local/bin/kubectl
+          
+          # Helm
           curl -LO https://get.helm.sh/helm-v3.14.1-linux-amd64.tar.gz
           tar -zxvf helm-v3.14.1-linux-amd64.tar.gz
           sudo mv linux-amd64/helm /usr/local/bin/helm
+
+          # kind
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.25.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
           kubectl version --client
           helm version
+          kind version
 
+      # Create temporary cluster
+      - name: Create kind cluster
+        run: kind create cluster --name ci-cluster
+
+      # Set context automatically (kind does this by default)
       - name: Create namespace
         run: |
           BRANCH="${GITHUB_REF##*/}"
@@ -141,12 +157,14 @@ jobs:
             kubectl create ns prod --dry-run=client -o yaml | kubectl apply -f -
           fi
 
+      # Install Prometheus CRDs
       - name: Install Prometheus CRDs
         run: |
           kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
           kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
           kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
+      # Deploy Helm chart
       - name: Deploy Helm chart
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
