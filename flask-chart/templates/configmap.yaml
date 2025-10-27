@@ -7,6 +7,5 @@ metadata:
   labels:
     app: {{ include "flask-chart.name" . }}
 data:
-  # Example config values
-  FLASK_ENV: {{ .Values.config.FLASK_ENV | quote }}
-  DEBUG: {{ .Values.config.DEBUG | quote }}
+  FLASK_ENV: {{ .Values.config.FLASK_ENV | default "dev" | quote }}
+  DEBUG: {{ .Values.config.DEBUG | default "false" | quote }}

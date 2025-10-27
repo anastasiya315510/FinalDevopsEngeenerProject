@@ -21,6 +21,12 @@ service:
   type: NodePort
   port: 8000
 
+
+config:
+  FLASK_ENV: dev
+  DEBUG: "false"
+
+
 resources:
   requests:
     cpu: 100m

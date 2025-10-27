@@ -291,6 +291,142 @@ groups:
 ■ Create custom dashboards that visualize application metrics (e.g.,
 CPU/memory usage, request rates, error rates) and cluster health.
 
+Here’s a structured approach to set up **Grafana** and connect it to Prometheus, along with custom dashboards for your QuakeWatch application:
+
+---
+
+## **1️⃣ Install Grafana**
+
+You have several options: Helm chart, kubectl manifests, or using a managed Grafana service. Using Helm is simplest in your cluster:
+
+```bash
+# Add Grafana Helm repo
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Install Grafana in monitoring namespace
+helm upgrade --install grafana grafana/grafana \
+  --namespace monitoring --create-namespace \
+  --set adminUser=admin \
+  --set adminPassword='StrongPassword123' \
+  --set service.type=LoadBalancer \
+  --wait
+```
+
+> This will expose Grafana with a LoadBalancer IP (or NodePort if your cluster doesn’t support LoadBalancer).
+
+---
+
+## **2️⃣ Access Grafana**
+
+```bash
+kubectl get svc -n monitoring
+```
+
+* Find the Grafana service (type LoadBalancer or NodePort).
+* Open in browser: `http://<EXTERNAL-IP>:3000`
+* Login with:
+
+  * **User:** admin
+  * **Password:** the one you set (`StrongPassword123`)
+
+---
+
+## **3️⃣ Connect Grafana to Prometheus**
+
+1. Go to **Configuration → Data Sources → Add Data Source**
+2. Select **Prometheus**
+3. Set URL to your Prometheus service, e.g.:
+
+```text
+http://prometheus-operated.monitoring.svc.cluster.local:9090
+```
+
+4. Click **Save & Test** → should succeed
+
+---
+
+## **4️⃣ Create Dashboards**
+
+### **Basic Panels to Monitor QuakeWatch**
+
+* **CPU/Memory Usage:**
+
+  * Query for your Flask pods:
+
+```promql
+sum(rate(container_cpu_usage_seconds_total{namespace="quakewatch", pod=~"flask-app-.*"}[1m])) by (pod)
+sum(container_memory_usage_bytes{namespace="quakewatch", pod=~"flask-app-.*"}) by (pod)
+```
+
+* **Request Rates / Error Rates:**
+
+  * If your app exposes metrics via **Prometheus client** (`/metrics` endpoint):
+
+```promql
+sum(rate(http_requests_total{namespace="quakewatch"}[1m])) by (status)
+sum(rate(http_requests_total{namespace="quakewatch", status=~"5.."}[1m])) by (pod)
+```
+
+* **Cluster Health:**
+
+  * Node CPU:
+
+```promql
+sum(rate(node_cpu_seconds_total{mode!="idle"}[1m])) by (instance)
+```
+
+* Node Memory:
+
+```promql
+node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100
+```
+
+---
+
+## **5️⃣ Optional: Import Pre-made Dashboards**
+
+Grafana provides dashboards for Kubernetes and Prometheus metrics:
+
+* Go to **Dashboards → Manage → Import**
+* Use Dashboard IDs:
+
+  * Kubernetes cluster monitoring: `6417`
+  * Node Exporter Full: `1860`
+
+---
+
+## **6️⃣ Automate with Helm / GitOps**
+
+If you want Grafana deployed automatically via ArgoCD:
+
+1. Add Grafana Helm chart to your repo as an app.
+2. Configure `values.yaml` for:
+
+```yaml
+adminUser: admin
+adminPassword: YOUR_SECRET
+service:
+  type: ClusterIP
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+      access: proxy
+```
+
+3. ArgoCD will sync Grafana + dashboards automatically.
+
+---
+
+If you want, I can create a **ready-to-use `values-grafana.yaml`** for Helm with QuakeWatch dashboards preconfigured, so you can just deploy via ArgoCD.
+
+Do you want me to do that?
+
+
 ○ Alerting:
 ■ Configure alerting rules in Prometheus to notify you when critical
 issues arise (e.g., high error rates or pod failures).
