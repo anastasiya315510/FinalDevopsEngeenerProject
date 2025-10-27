@@ -9,6 +9,7 @@ spec:
   selector:
     app: {{ include "flask-chart.name" . }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http-metrics          # 👈 add this name for Prometheus
+      port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
       protocol: TCP
