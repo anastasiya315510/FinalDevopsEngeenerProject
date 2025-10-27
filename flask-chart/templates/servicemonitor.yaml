@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "flask-chart.fullname" . }}-sm
+  namespace: {{ .Release.Namespace }}
   labels:
     release: {{ .Release.Name }}
 spec:
@@ -14,5 +15,6 @@ spec:
   endpoints:
     - port: http
       interval: 30s
+
 
 
