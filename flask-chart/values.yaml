@@ -11,6 +11,9 @@ ingress:
           pathType: Prefix
   tls: []
 
+config:
+  FLASK_ENV: dev
+  DEBUG: "false"
 
 image:
   repository: 315510/flask_final_project
