@@ -182,11 +182,14 @@ jobs:
       
 
       # Deploy Grafana via kubectl (raw manifests)
-      - name: Deploy Grafana manifests
+      - name: Deploy Grafana via Helm
         run: |
           NS_GRAFANA="monitoring"
           kubectl create ns $NS_GRAFANA --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -n $NS_GRAFANA -f manifests/grafana/ --recursive
+          helm upgrade --install grafana manifests/grafana/ \
+              --namespace $NS_GRAFANA \
+              --create-namespace \
+              --wait
       
       
       
