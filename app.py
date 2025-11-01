@@ -1,13 +1,26 @@
+"""Main Flask application module with metrics and health endpoints."""
+
+# -------------------------
+# Standard library imports
+# -------------------------
 import os
 import logging
 from logging.handlers import RotatingFileHandler
 
+# -------------------------
+# Third-party imports
+# -------------------------
 from flask import Flask, request
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter
+
+# -------------------------
+# Local application imports
+# -------------------------
 from dashboard import dashboard_blueprint
 from utils import timestamp_to_str
 from health import health_bp
-from prometheus_flask_exporter import PrometheusMetrics
-from prometheus_client import Counter
+
 
 def create_app():
     """Create and configure the Flask application."""
@@ -53,16 +66,16 @@ def create_app():
     metrics.info("app_info", "Application info", version="dev")
 
     # Custom counter
-    REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint"])
+    request_count = Counter("http_requests_total", "Total HTTP Requests", ["method", "endpoint"])
 
     @app.before_request
     def count_requests():
         """Increment custom request counter."""
-        REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
+        request_count.labels(method=request.method, endpoint=request.path).inc()
 
     return app
 
 if __name__ == "__main__":
-    app = create_app()
+    flask_app = create_app()
     # Run app
-    app.run(host="0.0.0.0", port=8000)
+    flask_app.run(host="0.0.0.0", port=8000)
