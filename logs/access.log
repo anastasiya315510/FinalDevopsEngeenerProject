@@ -11,3 +11,52 @@
 2025-10-26 22:14:19,478 - 127.0.0.1 - GET http://127.0.0.1:8000/
 2025-10-26 22:14:19,506 - 127.0.0.1 - GET http://127.0.0.1:8000/static/experts-logo.svg
 2025-10-26 22:14:20,085 - 127.0.0.1 - GET http://127.0.0.1:8000/favicon.ico
+2025-11-01 18:30:08,634 - 127.0.0.1 - GET http://127.0.0.1:8000/
+2025-11-01 18:30:08,663 - 127.0.0.1 - GET http://127.0.0.1:8000/static/experts-logo.svg
+2025-11-01 18:30:14,355 - 127.0.0.1 - GET http://127.0.0.1:8000/metrics
+2025-11-01 18:30:43,306 - 127.0.0.1 - GET http://127.0.0.1:8000/healthz
+2025-11-01 18:30:56,895 - 127.0.0.1 - GET http://127.0.0.1:8000/ready
+2025-11-01 18:31:52,606 - 127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics
+127.0.0.1 - GET http://localhost:8000/healthz
+127.0.0.1 - GET http://localhost:8000/ready
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://localhost:8000/metrics
+127.0.0.1 - GET http://127.0.0.1:8000/metrics

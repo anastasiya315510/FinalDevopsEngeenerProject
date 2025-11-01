@@ -21,3 +21,17 @@
 .idea/
 *.tmproj
 .vscode/
+# Ignore virtual environments
+# Ignore virtual environment
+.venv/
+
+# Optional: ignore IDE/editor files
+
+
+
+# Ignore Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+
