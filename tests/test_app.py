@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from app import create_app
-
+from prometheus_client import REGISTRY
 # -----------------------------
 # Fixtures
 # -----------------------------
@@ -17,6 +17,13 @@ def app_instance():
     app = create_app()
     app.config['TESTING'] = True
     return app
+
+@pytest.fixture(autouse=True)
+def clear_registry():
+    """Automatically clear Prometheus collectors before each test."""
+    collectors = list(REGISTRY._collector_to_names.keys())
+    for collector in collectors:
+        REGISTRY.unregister(collector)
 
 
 @pytest.fixture
