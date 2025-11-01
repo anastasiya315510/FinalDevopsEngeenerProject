@@ -26,3 +26,8 @@ admin:
 ldap:
   enabled: false
   existingSecret: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
