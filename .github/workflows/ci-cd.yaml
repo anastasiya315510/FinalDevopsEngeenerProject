@@ -186,10 +186,12 @@ jobs:
         run: |
           NS_GRAFANA="monitoring"
           kubectl create ns $NS_GRAFANA --dry-run=client -o yaml | kubectl apply -f -
-          helm upgrade --install grafana manifests/grafana/ \
-              --namespace $NS_GRAFANA \
-              --create-namespace \
-              --wait
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+          helm upgrade --install grafana grafana/grafana \
+            --namespace $NS_GRAFANA \
+            --values manifests/grafana/values.yaml \
+            --wait
       
       
       
