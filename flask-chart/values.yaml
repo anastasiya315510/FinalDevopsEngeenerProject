@@ -15,6 +15,12 @@ config:
   FLASK_ENV: dev
   DEBUG: "false"
 
+
+prometheus:
+  prometheusSpec:
+    configReloaderWeb:
+      listenAddress: ":8089"  # pick an unused port
+
 image:
   repository: 315510/flask_final_project
   pullPolicy: Always
@@ -45,8 +51,7 @@ serviceAccount:
   automount: true
   annotations: {}
 
-prometheus:
-  enabled: true
+
 
 kubeControllerManager:
   enabled: true

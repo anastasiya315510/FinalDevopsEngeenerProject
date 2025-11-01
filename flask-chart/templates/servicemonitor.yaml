@@ -4,7 +4,7 @@ metadata:
   name: {{ include "flask-chart.fullname" . }}-sm
   namespace: {{ .Release.Namespace }}
   labels:
-    release: {{ .Release.Name }}
+    {{ include "flask-chart.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
@@ -13,8 +13,6 @@ spec:
     matchNames:
       - {{ .Release.Namespace }}
   endpoints:
-    - port: http
+    - port: http-metrics # must match your Service port name
       interval: 30s
-
-
 
