@@ -178,7 +178,7 @@ jobs:
           kubectl create ns $NS_GRAFANA --dry-run=client -o yaml | kubectl apply -f -
 
           # Apply ArgoCD manifests recursively
-          kubectl apply -n $NS_ARGOCD -f manifests/argocd/templates/ --recursive
+          kubectl apply -n $NS_ARGOCD -f manifests/argocd/argo-cd/templates --recursive
 
           # Apply Grafana manifests recursively if you have them
           kubectl apply -n $NS_GRAFANA -f manifests/grafana/ --recursive
