@@ -6,6 +6,10 @@
 {{ printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{- define "grafana.namespace" -}}
+{{ .Release.Namespace }}
+{{- end }}
+
 {{- define "grafana.labels" -}}
 app.kubernetes.io/name: {{ include "grafana.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
