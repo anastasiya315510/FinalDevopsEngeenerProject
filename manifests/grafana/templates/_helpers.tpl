@@ -21,3 +21,16 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/name: {{ include "grafana.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+
+{{- define "grafana.configData" -}}
+{{- /* return a hash/checksum for configmaps or dashboards */ -}}
+{{- end }}
+
+{{- define "grafana.secretsData" -}}
+{{- /* return hash/checksum for secrets */ -}}
+{{- end }}
+
+{{- define "grafana.pod" -}}
+{{- /* pod spec, e.g., container image, env, ports */ -}}
+{{- end }}
