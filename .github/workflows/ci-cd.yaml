@@ -164,9 +164,9 @@ jobs:
           kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
           kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
-      # Deploy ArgoCD and Grafana manifests
-      # Deploy ArgoCD and Grafana manifests
-      - name: Apply ArgoCD & Grafana manifests
+
+      # Deploy ArgoCD
+      - name: Apply ArgoCD
         run: |
           BRANCH="${GITHUB_REF##*/}"
           # Namespaces
@@ -179,9 +179,16 @@ jobs:
 
           # Apply ArgoCD manifests recursively
           kubectl apply -n $NS_ARGOCD -f manifests/argocd/argo-cd/templates --recursive
+      
 
-          # Apply Grafana manifests recursively if you have them
-          kubectl apply -n $NS_GRAFANA -f manifests/grafana/ --recursive
+      - name: Deploy Grafana with Helm
+        run: |
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+          helm upgrade --install grafana grafana/grafana \
+          --namespace monitoring \
+          -f manifests/grafana/values-dev.yaml \
+          --create-namespace --wait
       
       
 
