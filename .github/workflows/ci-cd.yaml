@@ -177,11 +177,12 @@ jobs:
           kubectl create ns $NS_ARGOCD --dry-run=client -o yaml | kubectl apply -f -
           kubectl create ns $NS_GRAFANA --dry-run=client -o yaml | kubectl apply -f -
 
-          # Apply ArgoCD manifests
-          kubectl apply -n $NS_ARGOCD -f manifests/argocd/
+          # Apply ArgoCD manifests recursively
+          kubectl apply -n $NS_ARGOCD -f manifests/argocd/templates/ --recursive
 
-          # Apply Grafana manifests if you have them
-          kubectl apply -n $NS_GRAFANA -f manifests/grafana/
+          # Apply Grafana manifests recursively if you have them
+          kubectl apply -n $NS_GRAFANA -f manifests/grafana/ --recursive
+      
       
 
       # Deploy Helm chart
