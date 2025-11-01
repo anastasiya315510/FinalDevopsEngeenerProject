@@ -1,0 +1,33 @@
+replicas: 1
+revisionHistoryLimit: 10
+
+useStatefulSet: false
+
+persistence:
+  enabled: false
+  type: pvc
+
+autoscaling:
+  enabled: false
+
+deploymentStrategy: {}
+
+labels: {}
+annotations: {}
+
+podLabels: {}
+podAnnotations: {}
+
+envRenderSecret: {}
+env: {}
+admin:
+  existingSecret: ""
+
+ldap:
+  enabled: false
+  existingSecret: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80

@@ -1,3 +1,5 @@
+prometheus-client
+prometheus-flask-exporter
 Flask
 gunicorn
 
