@@ -131,8 +131,10 @@ jobs:
           cd terraform
           terraform init -reconfigure
           terraform apply -auto-approve
-          terraform output -json > tf_outputs.json
-        continue-on-error: false
+        env:
+          TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+
+
 
       - name: Save Terraform outputs
         id: tf
