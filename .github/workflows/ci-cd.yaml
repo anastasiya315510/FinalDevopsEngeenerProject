@@ -133,13 +133,29 @@ jobs:
       # 3️⃣ Configure kubeconfig from EC2
       - name: Setup kubeconfig
         run: |
+          # Write the secret PEM content to a temporary file
+          echo "$AWS_KEY_PEM" > key.pem
+          chmod 600 key.pem
+
           echo "Instance IP: $INSTANCE_IP"
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.AWS_KEY_PEM }} ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
+
+          # Copy the k3s kubeconfig from the EC2 instance
+          scp -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
+
+          # Replace localhost with public IP
           sed -i "s/127.0.0.1/$INSTANCE_IP/" kubeconfig
+
+          # Move to standard kubeconfig path
           mkdir -p $HOME/.kube
           mv kubeconfig $HOME/.kube/config
           chmod 600 $HOME/.kube/config
+
+          # Export kubeconfig environment variable
           export KUBECONFIG=$HOME/.kube/config
+        env:
+          AWS_KEY_PEM: ${{ secrets.AWS_KEY_PEM }}
+          INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
       # 4️⃣ Wait for Kubernetes API
       - name: Wait for Kubernetes API
