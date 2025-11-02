@@ -22,16 +22,13 @@ jobs:
         python-version: [3.11]
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
       - name: Install dependencies
         run: |
           python -m venv .venv
@@ -52,16 +49,13 @@ jobs:
         python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
       - name: Install dependencies
         run: |
           python -m venv .venv
@@ -69,7 +63,6 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pylint
-
       - name: Lint with pylint
         run: |
           source .venv/bin/activate
@@ -84,11 +77,9 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
       - name: Install dependencies
         run: |
           python -m venv .venv
@@ -96,7 +87,6 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
-
       - name: Run pytest
         run: |
           export PYTHONPATH=$(pwd)
@@ -110,7 +100,6 @@ jobs:
     name: Provision Infra & Deploy App
     runs-on: ubuntu-22.04
     needs: test
-
     steps:
       - uses: actions/checkout@v3
 
@@ -136,13 +125,12 @@ jobs:
           TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
         continue-on-error: false
 
-      # 3️⃣ Save Terraform outputs (export INSTANCE_IP to later steps)
+      # 3️⃣ Save Terraform outputs
       - name: Save Terraform outputs
         id: tf
         working-directory: terraform
         run: |
           echo "INSTANCE_IP=$(jq -r .instance_public_ip.value tf_outputs.json)" >> $GITHUB_ENV
-
 
       # 4️⃣ Install kubectl and Helm
       - name: Install kubectl and Helm
@@ -155,38 +143,54 @@ jobs:
           kubectl version --client
           helm version
 
-      # 5️⃣ Setup kubeconfig (insecure skip tls verify)
+      # 5️⃣ Setup kubeconfig
       - name: Setup kubeconfig
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG_DATA }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
-          kubectl config set-cluster default --server=https://${{ env.INSTANCE_IP }}:6443 --insecure-skip-tls-verify=true
 
-      # 6️⃣ Create namespaces
+      # 6️⃣ Wait for Kubernetes API to be ready
+      - name: Wait for Kubernetes API
+        run: |
+          echo "Waiting for Kubernetes API on $INSTANCE_IP:6443..."
+          for i in {1..30}; do
+            if nc -zv $INSTANCE_IP 6443; then
+              echo "Kubernetes API is ready!"
+              break
+            fi
+            echo "API not ready yet, retrying in 10s..."
+            sleep 10
+          done
+
+      # 7️⃣ Create namespaces
       - name: Create namespaces
         run: |
+          export KUBECONFIG=$HOME/.kube/config
           for ns in dev prod monitoring argocd; do
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
           done
 
-      # 7️⃣ Install Prometheus CRDs (with longer timeout)
+      # 8️⃣ Install Prometheus CRDs
       - name: Install Prometheus CRDs
         run: |
+          export KUBECONFIG=$HOME/.kube/config
           for crd in servicemonitors podmonitors prometheusrules; do
             kubectl apply --validate=false -f \
               https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_${crd}.yaml \
               --request-timeout=5m
           done
 
-      # 8️⃣ Deploy ArgoCD
+      # 9️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD
         run: |
+          export KUBECONFIG=$HOME/.kube/config
           kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive
 
-      # 9️⃣ Deploy Grafana
+      # 🔟 Deploy Grafana
       - name: Deploy Grafana
         run: |
+          export KUBECONFIG=$HOME/.kube/config
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo update
           helm upgrade --install grafana grafana/grafana \
@@ -194,7 +198,7 @@ jobs:
             --values manifests/grafana/values.yaml \
             --wait
 
-      # 🔟 Build & Deploy Flask app
+      # 11️⃣ Build & Deploy Flask app
       - name: Deploy Flask app
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
