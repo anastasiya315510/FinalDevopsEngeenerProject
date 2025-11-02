@@ -106,7 +106,6 @@ jobs:
   # -----------------------------
   # Terraform + Deploy Stage
   # -----------------------------
-
   deploy:
     name: Provision Infra & Deploy App
     runs-on: ubuntu-22.04
@@ -144,13 +143,11 @@ jobs:
         run: |
           echo "INSTANCE_IP=$(jq -r .instance_public_ip.value tf_outputs.json)" >> $GITHUB_ENV
 
-      # ✅ Optional: Debug to confirm it worked
+      # ✅ Debug instance IP (optional)
       - name: Debug instance IP
-        run:
-          echo "Instance IP from Terraform: $INSTANCE_IP"
+        run: echo "Instance IP from Terraform: $INSTANCE_IP"
 
-
-      # 3️⃣ Install kubectl and Helm
+      # 4️⃣ Install kubectl and Helm
       - name: Install kubectl and Helm
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -161,7 +158,7 @@ jobs:
           kubectl version --client
           helm version
 
-      # 4️⃣ Setup kubeconfig (insecure skip tls verify)
+      # 5️⃣ Setup kubeconfig (insecure skip tls verify)
       - name: Setup kubeconfig
         run: |
           mkdir -p $HOME/.kube
@@ -169,14 +166,14 @@ jobs:
           chmod 600 $HOME/.kube/config
           kubectl config set-cluster default --server=https://${{ env.INSTANCE_IP }}:6443 --insecure-skip-tls-verify=true
 
-      # 5️⃣ Create namespaces
+      # 6️⃣ Create namespaces
       - name: Create namespaces
         run: |
           for ns in dev prod monitoring argocd; do
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
           done
 
-      # 6️⃣ Install Prometheus CRDs (with longer timeout)
+      # 7️⃣ Install Prometheus CRDs (with longer timeout)
       - name: Install Prometheus CRDs
         run: |
           for crd in servicemonitors podmonitors prometheusrules; do
@@ -185,12 +182,12 @@ jobs:
               --request-timeout=5m
           done
 
-      # 7️⃣ Deploy ArgoCD
+      # 8️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD
         run: |
           kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive
 
-      # 8️⃣ Deploy Grafana
+      # 9️⃣ Deploy Grafana
       - name: Deploy Grafana
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts
@@ -200,7 +197,7 @@ jobs:
             --values manifests/grafana/values.yaml \
             --wait
 
-      # 9️⃣ Build & Deploy Flask app
+      # 🔟 Build & Deploy Flask app
       - name: Deploy Flask app
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
