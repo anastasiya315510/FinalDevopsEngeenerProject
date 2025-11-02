@@ -106,6 +106,7 @@ jobs:
   # -----------------------------
   # Terraform + Deploy Stage
   # -----------------------------
+
   deploy:
     name: Provision Infra & Deploy App
     runs-on: ubuntu-22.04
@@ -127,19 +128,27 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init & Apply
+        working-directory: terraform
         run: |
-          cd terraform
           terraform init -reconfigure
           terraform apply -auto-approve
+          terraform output -json > tf_outputs.json
         env:
           TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
+        continue-on-error: false
 
-
-
+      # 3️⃣ Save Terraform outputs (export INSTANCE_IP to later steps)
       - name: Save Terraform outputs
         id: tf
+        working-directory: terraform
         run: |
-          echo "INSTANCE_IP=$(jq -r .instance_public_ip.value terraform/tf_outputs.json)" >> $GITHUB_ENV
+          echo "INSTANCE_IP=$(jq -r .instance_public_ip.value tf_outputs.json)" >> $GITHUB_ENV
+
+      # ✅ Optional: Debug to confirm it worked
+      - name: Debug instance IP
+        run:
+          echo "Instance IP from Terraform: $INSTANCE_IP"
+
 
       # 3️⃣ Install kubectl and Helm
       - name: Install kubectl and Helm
