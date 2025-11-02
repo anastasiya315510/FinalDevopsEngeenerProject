@@ -104,16 +104,42 @@ jobs:
           pytest tests/
 
   # -----------------------------
-  # Deploy Stage
+  # Terraform + Deploy Stage
   # -----------------------------
   deploy:
-    name: Deploy to Kubernetes (AWS k3s)
+    name: Provision Infra & Deploy App
     runs-on: ubuntu-22.04
     needs: test
+
     steps:
       - uses: actions/checkout@v3
 
-      # Install kubectl & Helm
+      # 1️⃣ Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 2️⃣ Terraform Apply (idempotent)
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init -reconfigure
+          terraform apply -auto-approve
+          terraform output -json > tf_outputs.json
+        continue-on-error: false
+
+      - name: Save Terraform outputs
+        id: tf
+        run: |
+          echo "INSTANCE_IP=$(jq -r .instance_public_ip.value terraform/tf_outputs.json)" >> $GITHUB_ENV
+
+      # 3️⃣ Install kubectl and Helm
       - name: Install kubectl and Helm
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -124,33 +150,36 @@ jobs:
           kubectl version --client
           helm version
 
-      # Setup kubeconfig from GitHub secret
+      # 4️⃣ Setup kubeconfig (insecure skip tls verify)
       - name: Setup kubeconfig
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG_DATA }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
+          kubectl config set-cluster default --server=https://${{ env.INSTANCE_IP }}:6443 --insecure-skip-tls-verify=true
 
-      # Create namespaces (idempotent)
+      # 5️⃣ Create namespaces
       - name: Create namespaces
         run: |
           for ns in dev prod monitoring argocd; do
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
           done
 
-      # Install Prometheus CRDs (idempotent)
+      # 6️⃣ Install Prometheus CRDs (with longer timeout)
       - name: Install Prometheus CRDs
         run: |
           for crd in servicemonitors podmonitors prometheusrules; do
-            kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_${crd}.yaml --request-timeout=2m
+            kubectl apply --validate=false -f \
+              https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_${crd}.yaml \
+              --request-timeout=5m
           done
 
-      # Deploy ArgoCD
+      # 7️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD
         run: |
           kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive
 
-      # Deploy Grafana
+      # 8️⃣ Deploy Grafana
       - name: Deploy Grafana
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts
@@ -160,7 +189,7 @@ jobs:
             --values manifests/grafana/values.yaml \
             --wait
 
-      # Build and deploy Flask app
+      # 9️⃣ Build & Deploy Flask app
       - name: Deploy Flask app
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -177,5 +206,4 @@ jobs:
           elif [ "$BRANCH" = "master" ]; then
               helm upgrade --install flask-app-prod flask-chart/ \
                 --namespace prod -f flask-chart/values-prod.yaml --wait
-          
           fi
