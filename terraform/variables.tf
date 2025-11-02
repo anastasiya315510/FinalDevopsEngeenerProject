@@ -8,7 +8,7 @@ variable "ami_id" {
 }
 
 variable "instance_type" {
-  default = "t3.small"
+  default = "t2.small"
 }
 
 variable "key_name" {
