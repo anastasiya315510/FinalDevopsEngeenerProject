@@ -112,7 +112,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       # 2️⃣ Terraform Apply
-      # 2️⃣ Terraform Apply
       - name: Terraform Init & Apply
         working-directory: terraform
         run: |
@@ -131,20 +130,20 @@ jobs:
           TF_VAR_subnet_id: ${{ secrets.AWS_SUBNET_ID }}
           TF_VAR_security_group_id: ${{ secrets.AWS_SG_ID }}
 
-
       # 3️⃣ Configure kubeconfig from EC2
       - name: Setup kubeconfig
         run: |
-          INSTANCE_IP=$(cat INSTANCE_IP.txt)
-          scp -i ${{ secrets.AWS_KEY_PEM }} ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
+          echo "Instance IP: $INSTANCE_IP"
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.AWS_KEY_PEM }} ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
           sed -i "s/127.0.0.1/$INSTANCE_IP/" kubeconfig
           mkdir -p $HOME/.kube
           mv kubeconfig $HOME/.kube/config
           chmod 600 $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
+
+      # 4️⃣ Wait for Kubernetes API
       - name: Wait for Kubernetes API
         run: |
-          INSTANCE_IP=$(cat INSTANCE_IP.txt)
           echo "Waiting for Kubernetes API on $INSTANCE_IP:6443..."
           for i in {1..30}; do
             if nc -zv $INSTANCE_IP 6443; then
@@ -155,7 +154,7 @@ jobs:
             sleep 10
           done
 
-      # 4️⃣ Create namespaces
+      # 5️⃣ Create namespaces
       - name: Create namespaces
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -163,7 +162,7 @@ jobs:
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
           done
 
-      # 5️⃣ Install Prometheus CRDs
+      # 6️⃣ Install Prometheus CRDs
       - name: Install Prometheus CRDs
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -173,13 +172,13 @@ jobs:
               --request-timeout=5m
           done
 
-      # 6️⃣ Deploy ArgoCD
+      # 7️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD
         run: |
           export KUBECONFIG=$HOME/.kube/config
           kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive
 
-      # 7️⃣ Deploy Grafana
+      # 8️⃣ Deploy Grafana
       - name: Deploy Grafana
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -190,7 +189,7 @@ jobs:
             --values manifests/grafana/values.yaml \
             --wait
 
-      # 8️⃣ Build & Deploy Flask app
+      # 9️⃣ Build & Deploy Flask app
       - name: Deploy Flask app
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -202,10 +201,10 @@ jobs:
           docker push $DOCKER_USERNAME/flask_final_project:latest
 
           if [ "$BRANCH" = "dev" ]; then
-              helm upgrade --install flask-app-dev flask-chart/ \
-                --namespace dev -f flask-chart/values-dev.yaml --wait
+            helm upgrade --install flask-app-dev flask-chart/ \
+              --namespace dev -f flask-chart/values-dev.yaml --wait
           elif [ "$BRANCH" = "master" ]; then
-              helm upgrade --install flask-app-prod flask-chart/ \
-                --namespace prod -f flask-chart/values-prod.yaml --wait
-
+            helm upgrade --install flask-app-prod flask-chart/ \
+              --namespace prod -f flask-chart/values-prod.yaml --wait
           fi
+  
