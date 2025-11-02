@@ -143,9 +143,10 @@ jobs:
       # Install Prometheus CRDs (idempotent)
       - name: Install Prometheus CRDs
         run: |
-          for crd in servicemonitors podmonitors prometheusrules; do
-            kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_${crd}.yaml
-          done
+          kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml --request-timeout=2m
+          kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml --request-timeout=2m
+          kubectl apply --validate=false -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml --request-timeout=2m
+      
 
       # Deploy ArgoCD
       - name: Deploy ArgoCD
