@@ -143,9 +143,6 @@ jobs:
         run: |
           echo "INSTANCE_IP=$(jq -r .instance_public_ip.value tf_outputs.json)" >> $GITHUB_ENV
 
-      # ✅ Debug instance IP (optional)
-      - name: Debug instance IP
-        run: echo "Instance IP from Terraform: $INSTANCE_IP"
 
       # 4️⃣ Install kubectl and Helm
       - name: Install kubectl and Helm
