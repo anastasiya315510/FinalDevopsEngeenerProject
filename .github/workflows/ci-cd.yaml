@@ -111,7 +111,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 2️⃣ Terraform Apply (idempotent)
+      # 2️⃣ Terraform Apply
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -120,39 +120,31 @@ jobs:
         run: |
           terraform init -reconfigure
           terraform apply -auto-approve
-          terraform output -json > tf_outputs.json
+          terraform output -raw instance_public_ip > INSTANCE_IP.txt
         env:
+          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+          TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           TF_VAR_key_name: ${{ secrets.AWS_KEY_NAME }}
-        continue-on-error: false
+          TF_VAR_ami_id: ${{ secrets.AWS_AMI_ID }}
+          TF_VAR_instance_type: "t3.medium"
+          TF_VAR_vpc_id: ${{ secrets.AWS_VPC_ID }}
+          TF_VAR_subnet_id: ${{ secrets.AWS_SUBNET_ID }}
+          TF_VAR_security_group_id: ${{ secrets.AWS_SG_ID }}
 
-      # 3️⃣ Save Terraform outputs
-      - name: Save Terraform outputs
-        id: tf
-        working-directory: terraform
-        run: |
-          echo "INSTANCE_IP=$(jq -r .instance_public_ip.value tf_outputs.json)" >> $GITHUB_ENV
-
-      # 4️⃣ Install kubectl and Helm
-      - name: Install kubectl and Helm
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          sudo install kubectl /usr/local/bin/kubectl
-          curl -LO https://get.helm.sh/helm-v3.14.1-linux-amd64.tar.gz
-          tar -zxvf helm-v3.14.1-linux-amd64.tar.gz
-          sudo mv linux-amd64/helm /usr/local/bin/helm
-          kubectl version --client
-          helm version
-
-      # 5️⃣ Setup kubeconfig
+      # 3️⃣ Configure kubeconfig from EC2
       - name: Setup kubeconfig
         run: |
+          INSTANCE_IP=$(cat INSTANCE_IP.txt)
+          scp -i ${{ secrets.AWS_KEY_PEM }} ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
+          sed -i "s/127.0.0.1/$INSTANCE_IP/" kubeconfig
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG_DATA }}" > $HOME/.kube/config
+          mv kubeconfig $HOME/.kube/config
           chmod 600 $HOME/.kube/config
-
-      # 6️⃣ Wait for Kubernetes API to be ready
+          export KUBECONFIG=$HOME/.kube/config
       - name: Wait for Kubernetes API
         run: |
+          INSTANCE_IP=$(cat INSTANCE_IP.txt)
           echo "Waiting for Kubernetes API on $INSTANCE_IP:6443..."
           for i in {1..30}; do
             if nc -zv $INSTANCE_IP 6443; then
@@ -163,7 +155,7 @@ jobs:
             sleep 10
           done
 
-      # 7️⃣ Create namespaces
+      # 4️⃣ Create namespaces
       - name: Create namespaces
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -171,7 +163,7 @@ jobs:
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
           done
 
-      # 8️⃣ Install Prometheus CRDs
+      # 5️⃣ Install Prometheus CRDs
       - name: Install Prometheus CRDs
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -181,13 +173,13 @@ jobs:
               --request-timeout=5m
           done
 
-      # 9️⃣ Deploy ArgoCD
+      # 6️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD
         run: |
           export KUBECONFIG=$HOME/.kube/config
           kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive
 
-      # 🔟 Deploy Grafana
+      # 7️⃣ Deploy Grafana
       - name: Deploy Grafana
         run: |
           export KUBECONFIG=$HOME/.kube/config
@@ -198,7 +190,7 @@ jobs:
             --values manifests/grafana/values.yaml \
             --wait
 
-      # 11️⃣ Build & Deploy Flask app
+      # 8️⃣ Build & Deploy Flask app
       - name: Deploy Flask app
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -215,4 +207,5 @@ jobs:
           elif [ "$BRANCH" = "master" ]; then
               helm upgrade --install flask-app-prod flask-chart/ \
                 --namespace prod -f flask-chart/values-prod.yaml --wait
+
           fi
