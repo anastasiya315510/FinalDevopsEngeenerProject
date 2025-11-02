@@ -131,30 +131,32 @@ jobs:
           TF_VAR_security_group_id: ${{ secrets.AWS_SG_ID }}
 
       # 3️⃣ Configure kubeconfig from EC2
-      - name: Setup kubeconfig
+      - name: Setup kubeconfig without PEM
         run: |
-          # Write the secret PEM content to a temporary file
-          echo "$AWS_KEY_PEM" > key.pem
-          chmod 600 key.pem
-
-          echo "Instance IP: $INSTANCE_IP"
-
-          # Copy the k3s kubeconfig from the EC2 instance
-          scp -o StrictHostKeyChecking=no -i key.pem ubuntu@$INSTANCE_IP:/etc/rancher/k3s/k3s.yaml kubeconfig
-
-          # Replace localhost with public IP
-          sed -i "s/127.0.0.1/$INSTANCE_IP/" kubeconfig
-
-          # Move to standard kubeconfig path
           mkdir -p $HOME/.kube
-          mv kubeconfig $HOME/.kube/config
+          echo "apiVersion: v1
+          kind: Config
+          clusters:
+          - name: k3s
+            cluster:
+              server: https://$INSTANCE_IP:6443
+              insecure-skip-tls-verify: true
+          contexts:
+          - name: k3s
+            context:
+              cluster: k3s
+              user: default
+          current-context: k3s
+          users:
+          - name: default
+            user:
+              token: dummy-token" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
-
-          # Export kubeconfig environment variable
           export KUBECONFIG=$HOME/.kube/config
         env:
-          AWS_KEY_PEM: ${{ secrets.AWS_KEY_PEM }}
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
+
 
 
       # 4️⃣ Wait for Kubernetes API
