@@ -131,6 +131,7 @@ jobs:
           echo "${{ secrets.KUBECONFIG_DATA }}" > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
       
+      
 
       # Create namespaces (idempotent)
       - name: Create namespaces
