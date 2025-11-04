@@ -235,17 +235,35 @@ jobs:
 
 
       # 🔟 Deploy Grafana
+      # 🔟 Deploy Grafana
       - name: Deploy Grafana on cluster
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-            "helm repo add grafana https://grafana.github.io/helm-charts && \
-             helm repo update && \
-             helm upgrade --install grafana grafana/grafana \
-               --namespace monitoring \
-               --values /home/ec2-user/manifests/grafana/values.yaml \
-               --wait"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "
+            # ✅ Install Helm if not installed
+            if ! command -v helm &> /dev/null; then
+              echo 'Helm not found — installing...'
+              curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+            else
+              echo 'Helm already installed ✅'
+            fi
+
+            # ✅ Make sure manifests exist (if not, create the directory)
+            if [ ! -f /home/ec2-user/manifests/grafana/values.yaml ]; then
+              echo '❌ Grafana values.yaml not found at /home/ec2-user/manifests/grafana/values.yaml'
+              exit 1
+            fi
+
+            # ✅ Deploy Grafana via Helm
+            helm repo add grafana https://grafana.github.io/helm-charts
+            helm repo update
+            helm upgrade --install grafana grafana/grafana \
+              --namespace monitoring \
+              --values /home/ec2-user/manifests/grafana/values.yaml \
+              --wait
+          "
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
 
       # 1️⃣1️⃣ Build & Deploy Flask app
