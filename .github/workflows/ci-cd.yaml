@@ -198,6 +198,7 @@ jobs:
           for ns in dev prod monitoring argocd; do
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
               "sudo k3s kubectl create ns $ns --dry-run=client -o yaml | sudo k3s kubectl apply -f -"
+          done
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
