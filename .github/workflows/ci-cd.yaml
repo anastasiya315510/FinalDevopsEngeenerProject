@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -161,7 +161,7 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           scp -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem \
-            ubuntu@${INSTANCE_IP}:/etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+            ec2-user@${INSTANCE_IP}:/etc/rancher/k3s/k3s.yaml $HOME/.kube/config
           sed -i "s/127.0.0.1/${INSTANCE_IP}/g" $HOME/.kube/config
           chmod 600 $HOME/.kube/config
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
