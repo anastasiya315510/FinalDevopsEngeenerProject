@@ -178,12 +178,13 @@ jobs:
 
 
       # 6️⃣ Wait for Kubernetes API
-      - name: Wait for Kubernetes API
+      - name: Wait for Kubernetes API to be ready
         run: |
-          echo "Waiting for Kubernetes API on $INSTANCE_IP:6443..."
+          echo "Waiting for Kubernetes API on instance $INSTANCE_IP..."
           for i in {1..30}; do
-            if nc -zv $INSTANCE_IP 6443; then
-              echo "Kubernetes API is ready!"
+            if ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
+                "sudo k3s kubectl get nodes >/dev/null 2>&1"; then
+              echo "✅ Kubernetes API is ready!"
               break
             fi
             echo "API not ready yet, retrying in 10s..."
@@ -192,6 +193,7 @@ jobs:
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
+
       # 7️⃣ Create namespaces
       - name: Create namespaces on cluster
         run: |
@@ -199,6 +201,7 @@ jobs:
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
               "sudo k3s kubectl create ns $ns --dry-run=client -o yaml | sudo k3s kubectl apply -f -"
           done
+
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
@@ -217,14 +220,13 @@ jobs:
 
 
       # 9️⃣ Deploy ArgoCD
-      - name: Deploy ArgoCD via SSH
-        env:
-          INSTANCE_IP: ${{ env.INSTANCE_IP }}
+      - name: Deploy ArgoCD on cluster
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-            "sudo k3s kubectl apply -n argocd -f /home/ec2-user/manifests/argocd/argo-cd/templates --recursive"
-      
-      
+            "sudo k3s kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive"
+        env:
+          INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
       # 🔟 Deploy Grafana
       - name: Deploy Grafana on cluster
