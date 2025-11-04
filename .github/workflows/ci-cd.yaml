@@ -193,6 +193,7 @@ jobs:
           export KUBECONFIG=$HOME/.kube/config
           for ns in dev prod monitoring argocd; do
             kubectl create ns $ns --dry-run=client -o yaml | kubectl apply -f -
+          done
         env:
           KUBECONFIG: ${{ env.KUBECONFIG }}
 
