@@ -160,13 +160,14 @@ jobs:
       - name: Fetch kubeconfig from EC2
         run: |
           mkdir -p $HOME/.kube
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem \
-            ec2-user@${INSTANCE_IP}:/etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" > $HOME/.kube/config
           sed -i "s/127.0.0.1/${INSTANCE_IP}/g" $HOME/.kube/config
           chmod 600 $HOME/.kube/config
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
       # 6️⃣ Wait for Kubernetes API
       - name: Wait for Kubernetes API
