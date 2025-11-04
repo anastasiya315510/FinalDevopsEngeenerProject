@@ -152,7 +152,7 @@ jobs:
           done
           
           echo "Verifying SSH connection..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ubuntu@${INSTANCE_IP} "hostname"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "hostname"
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
