@@ -277,27 +277,43 @@ jobs:
 
 
       # 1️⃣1️⃣ Build & Deploy Flask app
-      - name: Deploy Flask app on cluster
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          INSTANCE_IP: ${{ env.INSTANCE_IP }}
+      - name: Deploy Flask app via Helm
         run: |
           BRANCH="${GITHUB_REF##*/}"
 
-          # Build and push Docker image
+          # 🐳 Build and push Docker image
           docker build -t $DOCKER_USERNAME/flask_final_project:latest .
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           docker push $DOCKER_USERNAME/flask_final_project:latest
 
-          # Deploy via Helm on the EC2 instance
+          # 🚀 Deploy via Helm on EC2 instance
           if [ "$BRANCH" = "dev" ]; then
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-              "helm upgrade --install flask-app-dev /home/ec2-user/flask-chart \
-               --namespace dev -f /home/ec2-user/flask-chart/values-dev.yaml --wait"
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "
+              # ✅ Ensure Helm can talk to K3s
+              sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+              export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+              # ✅ Run Helm command for dev
+              helm upgrade --install flask-app-dev /home/ec2-user/flask-chart \
+                --namespace dev \
+                -f /home/ec2-user/flask-chart/values-dev.yaml \
+                --wait
+            "
           elif [ "$BRANCH" = "master" ]; then
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-              "helm upgrade --install flask-app-prod /home/ec2-user/flask-chart \
-               --namespace prod -f /home/ec2-user/flask-chart/values-prod.yaml --wait"
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "
+              sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+              export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+              # ✅ Run Helm command for prod
+              helm upgrade --install flask-app-prod /home/ec2-user/flask-chart \
+                --namespace prod \
+                -f /home/ec2-user/flask-chart/values-prod.yaml \
+                --wait
+            "
           fi
+        env:
+          INSTANCE_IP: ${{ env.INSTANCE_IP }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
       
