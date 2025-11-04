@@ -161,14 +161,20 @@ jobs:
       - name: Fetch kubeconfig from EC2
         run: |
           mkdir -p $HOME/.kube
-          echo "Checking current directory on EC2..."
+          echo "Waiting for /etc/rancher/k3s/k3s.yaml to exist on EC2..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-            "pwd; ls -la; cd ..; pwd; ls -la; sudo cat /etc/rancher/k3s/k3s.yaml" > $HOME/.kube/config
+            'while [ ! -f /etc/rancher/k3s/k3s.yaml ]; do echo "k3s.yaml not ready, sleeping 5s..."; sleep 5; done'
+
+          echo "Fetching kubeconfig..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" > $HOME/.kube/config
+
           sed -i "s/127.0.0.1/${INSTANCE_IP}/g" $HOME/.kube/config
           chmod 600 $HOME/.kube/config
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
 
 
