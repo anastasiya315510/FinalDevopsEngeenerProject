@@ -134,8 +134,8 @@ jobs:
       - name: Configure SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AWS_PEM_FILE }}" > ~/.ssh/github-actions-key.pem
-          chmod 600 ~/.ssh/github-actions-key.pem
+          echo "${{ secrets.AWS_PEM_FILE }}" > ~/.ssh/hometask.pem
+          chmod 600 ~/.ssh/hometask.pem
           echo "SSH key configured successfully"
 
       # 4️⃣ Wait for EC2 and verify SSH access
@@ -152,7 +152,7 @@ jobs:
           done
           
           echo "Verifying SSH connection..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/github-actions-key.pem ubuntu@${INSTANCE_IP} "hostname"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ubuntu@${INSTANCE_IP} "hostname"
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
@@ -162,7 +162,7 @@ jobs:
           echo "Fetching kubeconfig from EC2 instance..."
           mkdir -p $HOME/.kube
           
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/github-actions-key.pem \
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem \
             ubuntu@${INSTANCE_IP}:/etc/rancher/k3s/k3s.yaml $HOME/.kube/config
           
           sed -i "s/127.0.0.1/${INSTANCE_IP}/g" $HOME/.kube/config
