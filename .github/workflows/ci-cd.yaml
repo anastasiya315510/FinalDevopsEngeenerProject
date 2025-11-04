@@ -286,6 +286,9 @@ jobs:
           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
           docker push $DOCKER_USERNAME/flask_final_project:latest
 
+          # 📤 Copy Helm chart to EC2
+          scp -i ~/.ssh/hometask.pem -o StrictHostKeyChecking=no -r ./flask-chart ec2-user@${INSTANCE_IP}:/home/ec2-user/
+
           # 🚀 Deploy via Helm on EC2 instance
           if [ "$BRANCH" = "dev" ]; then
             ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "
@@ -315,5 +318,6 @@ jobs:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
 
       
