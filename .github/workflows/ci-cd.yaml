@@ -154,23 +154,28 @@ jobs:
           done
 
       # 5️⃣ Fetch kubeconfig from EC2
+      # 5️⃣ Fetch kubeconfig from EC2
       - name: Fetch kubeconfig from EC2
         run: |
           mkdir -p $HOME/.kube
 
-          # wait for k3s kubeconfig
+          echo "Waiting for /etc/rancher/k3s/k3s.yaml to exist on EC2..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
             'while [ ! -f /etc/rancher/k3s/k3s.yaml ]; do echo "k3s.yaml not ready, sleeping 5s..."; sleep 5; done'
 
-          # fetch kubeconfig and replace localhost with public IP
+          echo "Fetching kubeconfig..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
             "sudo cat /etc/rancher/k3s/k3s.yaml" > $HOME/.kube/config
 
-          sed -i "s/127.0.0.1/${INSTANCE_IP}/g" $HOME/.kube/config
+          echo "Replacing localhost with internal cluster IP..."
+          sed -i "s/127.0.0.1/${INTERNAL_IP}/g" $HOME/.kube/config
+
           chmod 600 $HOME/.kube/config
           echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+          INTERNAL_IP: ${{ env.INTERNAL_IP }}
+
 
       # 6️⃣ Wait for Kubernetes API
       - name: Wait for Kubernetes API
