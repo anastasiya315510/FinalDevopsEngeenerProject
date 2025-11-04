@@ -219,13 +219,19 @@ jobs:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
 
 
+
       # 9️⃣ Deploy ArgoCD
       - name: Deploy ArgoCD on cluster
         run: |
+          echo "Copying ArgoCD manifests to EC2..."
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem -r manifests ec2-user@${INSTANCE_IP}:/home/ec2-user/
+
+          echo "Applying ArgoCD manifests on cluster..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-            "sudo k3s kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive"
+            "sudo k3s kubectl apply -n argocd -f /home/ec2-user/manifests/argocd/argo-cd/templates --recursive"
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
 
       # 🔟 Deploy Grafana
