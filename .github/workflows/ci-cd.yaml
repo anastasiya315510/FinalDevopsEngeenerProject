@@ -217,13 +217,14 @@ jobs:
 
 
       # 9️⃣ Deploy ArgoCD
-      - name: Deploy ArgoCD on cluster
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
-            "sudo k3s kubectl apply -n argocd -f manifests/argocd/argo-cd/templates --recursive"
+      - name: Deploy ArgoCD via SSH
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
-
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} \
+            "sudo k3s kubectl apply -n argocd -f /home/ec2-user/manifests/argocd/argo-cd/templates --recursive"
+      
+      
 
       # 🔟 Deploy Grafana
       - name: Deploy Grafana on cluster
