@@ -236,6 +236,7 @@ jobs:
 
       # 🔟 Deploy Grafana
       # 🔟 Deploy Grafana
+      # 🔟 Deploy Grafana on cluster
       - name: Deploy Grafana on cluster
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/hometask.pem ec2-user@${INSTANCE_IP} "
@@ -247,22 +248,31 @@ jobs:
               echo 'Helm already installed ✅'
             fi
 
-            # ✅ Make sure manifests exist (if not, create the directory)
+            # ✅ Verify Grafana manifests exist
             if [ ! -f /home/ec2-user/manifests/grafana/values.yaml ]; then
               echo '❌ Grafana values.yaml not found at /home/ec2-user/manifests/grafana/values.yaml'
               exit 1
             fi
 
-            # ✅ Deploy Grafana via Helm
-            helm repo add grafana https://grafana.github.io/helm-charts
-            helm repo update
-            helm upgrade --install grafana grafana/grafana \
+            # ✅ Verify K3s kubeconfig exists
+            if [ ! -f /etc/rancher/k3s/k3s.yaml ]; then
+              echo '❌ k3s kubeconfig not found at /etc/rancher/k3s/k3s.yaml'
+              exit 1
+            fi
+
+            # ✅ Deploy Grafana using K3s context
+            echo 'Deploying Grafana via Helm using K3s kubeconfig...'
+            sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm repo add grafana https://grafana.github.io/helm-charts
+            sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm repo update
+            sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml helm upgrade --install grafana grafana/grafana \
               --namespace monitoring \
               --values /home/ec2-user/manifests/grafana/values.yaml \
+              --create-namespace \
               --wait
           "
         env:
           INSTANCE_IP: ${{ env.INSTANCE_IP }}
+
 
 
 
